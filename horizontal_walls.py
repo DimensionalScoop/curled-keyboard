@@ -125,7 +125,7 @@ def fill_all():
 
 
 def switches():
-    shape = import_stl("../curled-keyboard/keymount.stl").down(z_height / 2)
+    shape = import_stl("./switch-mount.stl").down(z_height / 2)
     # cube(x_width, x_width, z_height, center=True)
     switches = [tr(shape) for tr in demo_transforms.flatten()]
     return np.sum(switches).color("Gray")
