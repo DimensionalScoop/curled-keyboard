@@ -5,7 +5,7 @@ from mommy import render_all
 
 
 eps = 0.01
-inf = 70
+inf = 1000
 
 
 def make_wall(
@@ -22,13 +22,15 @@ def make_wall(
 def simple_walls(roof, base_offset, thickness=2):
     """Create vertical walls around the `roof`.
     Walls go up to the maximum height of the roof."""
-    base = roof.projection()
+    base = roof.projection().fill()
+    thin_base_plate = base.linear_extrude(eps, convexity=10).down(base_offset)
+
     solid_walls = (
         base.offset(thickness).linear_extrude(inf, convexity=10).down(base_offset)
     )
     cutout = base.linear_extrude(inf, convexity=10).down(base_offset)
     thin_walls = solid_walls - cutout
-    bb = bounding_box(excess=thickness)(roof + base).down(thickness)
+    bb = bounding_box(excess=thickness)(roof + thin_base_plate).down(thickness)
 
     return thin_walls & bb
 
