@@ -114,9 +114,7 @@ def _key_fill(grid, x, y):
             pass
 
 
-@render
-def fill_all():
-    grid = demo_transforms
+def fill_between_switches(grid):
     gap_fill = []
     for x in range(grid.shape[0]):
         for y in range(grid.shape[1]):
@@ -124,16 +122,21 @@ def fill_all():
     return union()(*gap_fill)
 
 
-def switches():
-    shape = import_stl("./switch-mount.stl").down(z_height / 2)
-    # cube(x_width, x_width, z_height, center=True)
+def make_switches(use_dummy=True):
+    if use_dummy:
+        shape = cube(x_width, x_width, z_height, center=True)
+    else:
+        shape = import_stl("./switch-mount.stl").down(z_height / 2)
     switches = [tr(shape) for tr in demo_transforms.flatten()]
     return np.sum(switches).color("Gray")
 
 
 @render
 def example():
-    return switches()
+    switches = make_switches(False)
+    switch_fill = fill_between_switches(demo_transforms)
+    walls = vertical_walls.simple_walls_cutoff(make_switches(), 30, 2)
+    return switches + switch_fill + walls
 
 
 if __name__ == "__main__":
