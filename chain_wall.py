@@ -1,17 +1,12 @@
 from solid2 import *  # noqa: F403
-# from solid2.extensions.bosl2 import *  # noqa: F403
-
-# import solid2.extensions.bosl2 as bosl  # noqa: F403
-import solid2 as sp
-from solid2.extensions.bosl2 import TOP, bounding_box, chain_hull, minkowski_difference, xcyl
+from solid2.extensions.bosl2 import chain_hull
 
 from mommy import render, render_all
-from scad_helpers import attachable_cube
 
 import numpy as np
-from numpy import array as ar
 
 import horizontal_walls
+import boundary
 
 
 eps = 0.01
@@ -21,16 +16,64 @@ x_width = 17
 z_height = 8.5
 
 
+def get_outer_boundary(grid, thickness=3):
+    corner_grid = boundary.center_to_corner_array(grid)
+    outer_corners_unsorted = boundary.find_boundary(corner_grid)
+    outer_corners = boundary.sort_idx_to_be_continous(outer_corners_unsorted)
+    bound = []
+    for i, j in outer_corners:
+        x, y, dx, dy = boundary.corner_to_center_idx(i, j)
+
+        def _transform(o, x=x, y=y, dx=dx, dy=dy):
+            shift = x_width / 2 + thickness
+            o = o.forward(shift * dy).right(shift * dx)
+            return grid[x, y](o)
+
+        bound.append(_transform)
+    return bound
+
+
+def create_switch_wall(
+    grid,
+    thickness=3,
+):
+    boundary = get_outer_boundary(grid, thickness)
+    outside_posts = [
+        trf(cylinder(z_height, r=thickness).down(z_height / 2)) for trf in boundary
+    ]
+    outside_posts.append(outside_posts[0])
+    return chain_hull()(*outside_posts)
+
+
+demo_transforms = np.empty((6, 4), dtype=object)
+finger_shift = np.array([0, 0, 5, 10, 5, -2, -2]) * 3
+for x in range(demo_transforms.shape[0]):
+    for y in range(demo_transforms.shape[1]):
+
+        def _transform(o, x=x, y=y, shift=finger_shift[x]):
+            return (
+                o.down(50)
+                .rotateX(23 * y - 20)
+                .up(50)
+                .down(400)
+                .rotateY(-x * 3 + 8)
+                .up(400)
+                .forward(shift)
+                .rotateZ(-3 * x)  # fan
+            )
+
+        demo_transforms[x, y] = _transform
+
 
 @render
 def example():
-    grid = horizontal_walls.demo_transforms
+    grid = demo_transforms
     switches = horizontal_walls.make_switches(grid)
     fill = horizontal_walls.fill_between_switches(grid)
-    return chain_hull()(switches)
 
-    
-    # return switches + fill
+    wall = create_switch_wall(grid, 1)
+
+    return wall + switches + fill
 
 
 if __name__ == "__main__":
