@@ -36,13 +36,26 @@ def get_outer_boundary(grid, thickness=3):
 def create_switch_wall(
     grid,
     thickness=3,
+    height=10,
 ):
     boundary = get_outer_boundary(grid, thickness)
-    outside_posts = [
-        trf(cylinder(z_height, r=thickness).down(z_height / 2)) for trf in boundary
-    ]
+
+    post = cylinder(z_height, r=thickness).down(z_height / 2)
+    outside_posts = [trf(post) for trf in boundary]
     outside_posts.append(outside_posts[0])
-    return chain_hull()(*outside_posts)
+    switch_wall = chain_hull()(*outside_posts).color("Orange")
+
+    plate = cylinder(eps, r=thickness).down(z_height / 2)
+    bound_2d = [trf(plate) for trf in boundary]
+    bound_2d.append(bound_2d[0])
+    lower_wall_pieces = []
+    for a, b in zip(bound_2d[:-1], bound_2d[1:]):
+        piece_2d = hull()(a, b)
+        wall = piece_2d.projection().linear_extrude(height).down(height)
+        connector = hull()(piece_2d, wall)
+        lower_wall_pieces.append(wall + connector)
+
+    return union()(lower_wall_pieces).color("DarkOrange") + switch_wall
 
 
 demo_transforms = np.empty((6, 4), dtype=object)
@@ -68,7 +81,7 @@ for x in range(demo_transforms.shape[0]):
 @render
 def example():
     grid = demo_transforms
-    switches = horizontal_walls.make_switches(grid)
+    switches = horizontal_walls.make_switches(grid, False)
     fill = horizontal_walls.fill_between_switches(grid)
 
     wall = create_switch_wall(grid, 1)
