@@ -131,7 +131,6 @@ def make_switches(grid, use_dummy=True):
     return np.sum(switches).color("Gray")
 
 
-@render
 def example():
     switches = make_switches(demo_transforms, False)
     switch_fill = fill_between_switches(demo_transforms)
@@ -140,4 +139,5 @@ def example():
 
 
 if __name__ == "__main__":
-    render_all()
+    ex = example()
+    render_all(ex)

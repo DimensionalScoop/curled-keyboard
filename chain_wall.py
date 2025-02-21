@@ -1,7 +1,7 @@
 from solid2 import *  # noqa: F403
 from solid2.extensions.bosl2 import chain_hull
 
-from mommy import render, render_all
+from mommy import render_all
 
 import numpy as np
 
@@ -58,29 +58,30 @@ def create_switch_wall(
     return union()(lower_wall_pieces).color("DarkOrange") + switch_wall
 
 
-demo_transforms = np.empty((6, 4), dtype=object)
-finger_shift = np.array([0, 0, 5, 10, 5, -2, -2]) * 3
-for x in range(demo_transforms.shape[0]):
-    for y in range(demo_transforms.shape[1]):
+def _generate_example_data():
+    demo_transforms = np.empty((6, 4), dtype=object)
+    finger_shift = np.array([0, 0, 5, 10, 5, -2, -2]) * 3
+    for x in range(demo_transforms.shape[0]):
+        for y in range(demo_transforms.shape[1]):
 
-        def _transform(o, x=x, y=y, shift=finger_shift[x]):
-            return (
-                o.down(50)
-                .rotateX(23 * y - 20)
-                .up(50)
-                .down(400)
-                .rotateY(-x * 3 + 8)
-                .up(400)
-                .forward(shift)
-                .rotateZ(-3 * x)  # fan
-            )
+            def _transform(o, x=x, y=y, shift=finger_shift[x]):
+                return (
+                    o.down(50)
+                    .rotateX(23 * y - 20)
+                    .up(50)
+                    .down(400)
+                    .rotateY(-x * 3 + 8)
+                    .up(400)
+                    .forward(shift)
+                    .rotateZ(-3 * x)  # fan
+                )
 
-        demo_transforms[x, y] = _transform
+            demo_transforms[x, y] = _transform
+    return demo_transforms
 
 
-@render
 def example():
-    grid = demo_transforms
+    grid = _generate_example_data()
     switches = horizontal_walls.make_switches(grid, False)
     fill = horizontal_walls.fill_between_switches(grid)
 
@@ -90,4 +91,5 @@ def example():
 
 
 if __name__ == "__main__":
-    render_all()
+    obj = example()
+    render_all(obj)
