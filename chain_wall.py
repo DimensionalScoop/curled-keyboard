@@ -9,6 +9,7 @@ import horizontal_walls
 import socket
 import boundary
 
+# XXX: The git version of openscad (~ Feb 2025) has a correct preview (F5) of this file, but renders (F6) the geometry incorrectly
 
 eps = 0.01
 inf = 70
@@ -38,12 +39,12 @@ def create_switch_wall(
 ):
     boundary = get_outer_boundary(grid, thickness)
 
-    post = cylinder(socket.z_height, r=thickness).down(socket.z_height / 2)
+    post = cylinder(socket.z_height, r=thickness, _fn=15).down(socket.z_height / 2)
     outside_posts = [trf(post) for trf in boundary]
     outside_posts.append(outside_posts[0])
     switch_wall = chain_hull()(*outside_posts).color("Orange")
 
-    plate = cylinder(eps, r=thickness).down(socket.z_height / 2)
+    plate = cylinder(eps, r=thickness, _fn=15).down(socket.z_height / 2)
     bound_2d = [trf(plate) for trf in boundary]
     bound_2d.append(bound_2d[0])
     lower_wall_pieces = []
