@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from solid2 import *  # noqa: F403
 import solid2 as sp
 
@@ -18,24 +19,66 @@ x_width = 17
 z_height = 8.5
 
 
+@dataclass
+class Stagger:
+    x: int
+    y: int
+    z: int
+
+    def array(self):
+        return [self.x, self.y, self.z]
+
+
 props = SimpleNamespace(
-    curvature_row=0,
+    facing_angle=-22,
+    curvature_row=104 / 3,
     curvature_col=0,
+    # fan=[0, 0, 30, 7, 27, 0],
+    fan=np.array([0, 0, 3, 0.7, 2.7, 0]) * 1,
+    staggers=[
+        Stagger(0, 0, 0),  # index
+        Stagger(0, 0, 0),  # index
+        Stagger(0, 7.3, 1.15),  # middle
+        Stagger(0, 0.75, -0.3),  # ring
+        Stagger(0, -14, 1.63),  # pinky
+        Stagger(0, -14, 1.63),  # pinky
+    ],
+    row_spacing=socket.x_width + 4,
+    col_spacing=np.array([0, 0, 2, 5, 7, 0]) + socket.x_width,
 )
+
+target_radius = 5
+U = props.row_spacing * 4 / (props.curvature_row * 3 / 360)
+actual_radius = U / 2 / np.pi
+print(actual_radius)
 
 
 grid = np.empty((6, 4), dtype=object)
 for x in range(grid.shape[0]):
+    height_of_ymost_edge = 0
+    width_of_ymost_edge = 0
     for y in range(grid.shape[1]):
+        # row tilting
+        row_tilt = y * props.curvature_row + props.facing_angle
+        row_h = height_of_ymost_edge
+        height_of_ymost_edge += np.sin(np.deg2rad(row_tilt)) * props.row_spacing
+        row_f = width_of_ymost_edge
+        width_of_ymost_edge += np.cos(np.deg2rad(row_tilt)) * props.row_spacing
 
-        def _transform(o, x=x, y=y):
+        row_trans = np.array([0, row_f, row_h])
+
+        def _transform(o, x=x, y=y, row_tilt=row_tilt, row_trans_p=row_trans.copy()):
             return (
-                o.down(50)
-                .rotateX(23 * y - 20)
-                .up(50)
-                .down(400)
-                .rotateY(-x * 3 + 8)
-                .up(400)
+                o.down(socket.z_height / 2)
+                .forward(props.row_spacing / 2)
+                .rotateX(row_tilt)
+                # .forward(-x_width * 1.5)
+                # # .forward(socket.x_width * y)
+                # # .rotateZ(-np.sum(props.fan[: x + 1]))
+                .translate(props.staggers[x].array())
+                .translate(row_trans_p)
+                .right(np.sum(props.col_spacing[: x + 1]))
+                # .rotateX(10 * y)
             )
 
         grid[x, y] = _transform
@@ -77,14 +120,27 @@ def example_support():
     return socket_.debug() + support.color("DarkBlue")
 
 
+def keycap():
+    return (
+        hull()(
+            cube(16.75, 16.75, eps, center=True),
+            cube(13.15, 13.15, eps, center=True).up(6.4),
+        )
+        .up(socket.z_height / 2 + 1)
+        .color("DarkRed")
+    )
+
+
 @render
 def example():
     switches = socket.socket_grid(grid, False)
     fill = horizontal_walls.fill_between_switches(grid)
 
-    wall = chain_wall.create_switch_wall(grid, 1)
+    # wall = chain_wall.create_switch_wall(grid, 1)
 
-    return wall + switches + fill
+    keycaps = [trf(keycap()) for trf in grid.flatten()]
+
+    return switches + fill + keycaps  # - cube(1000, 1000, 1000).back(500).down(100)
 
 
 if __name__ == "__main__":
