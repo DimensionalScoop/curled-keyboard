@@ -1,25 +1,14 @@
 from solid2 import *  # noqa: F403
-# from solid2.extensions.bosl2 import *  # noqa: F403
-
-# import solid2.extensions.bosl2 as bosl  # noqa: F403
 import solid2 as sp
-from solid2.extensions.bosl2 import (
-    TOP,
-    bounding_box,
-    chain_hull,
-    minkowski_difference,
-    xcyl,
-)
 
 from mommy import render, render_all
-from scad_helpers import attachable_cube
 
 from types import SimpleNamespace
 import numpy as np
-from numpy import array as ar
 
-import horizontal_walls
 import chain_wall
+import horizontal_walls
+import socket
 
 
 eps = 0.01
@@ -52,10 +41,6 @@ for x in range(grid.shape[0]):
         grid[x, y] = _transform
 
 
-socket_dummy = cube(x_width, x_width, z_height, center=True)
-socket = import_stl("./switch-mount.stl").down(z_height / 2)
-
-
 def remove_above(body, tool):
     """remove all mass of the body that is in or above the tool"""
     # XXX: only works for convex shapes
@@ -67,7 +52,7 @@ def create_key_support(place):
     column = place(to_bottom(cylinder(z_height, r=2)))
 
     # head = place(sphere(0.5)).color("Green")
-    head = socket.up(z_height / 2).down(eps).projection(cut=True)
+    head = socket.socket().up(z_height / 2).down(eps).projection(cut=True)
     head = head.offset(delta=-0.5)
     head = to_bottom(head.linear_extrude(eps))
     head = place(head)
@@ -77,24 +62,24 @@ def create_key_support(place):
     plate = place(to_bottom(cylinder(eps, r=2)))
     stem = plate.projection().linear_extrude(inf)
     stem = stem.down(inf / 2)
-    stem = remove_above(stem, place(socket_dummy))
+    stem = remove_above(stem, place(socket.dummy()))
 
     return column + stem + head
 
 
-@render
 def example_support():
     sample_transform = grid[3, 3]
 
-    socket = horizontal_walls.make_switches(np.array([sample_transform]), False)
+    socket_ = socket.socket_grid(np.array([sample_transform]), False)
 
     support = create_key_support(sample_transform)
 
-    return socket.debug() + support.color("DarkBlue")
+    return socket_.debug() + support.color("DarkBlue")
 
 
+@render
 def example():
-    switches = horizontal_walls.make_switches(grid, False)
+    switches = socket.socket_grid(grid, False)
     fill = horizontal_walls.fill_between_switches(grid)
 
     wall = chain_wall.create_switch_wall(grid, 1)
