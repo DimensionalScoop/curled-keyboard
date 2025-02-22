@@ -6,14 +6,12 @@ from mommy import render_all
 import numpy as np
 
 import horizontal_walls
+import socket
 import boundary
 
 
 eps = 0.01
 inf = 70
-
-x_width = 17
-z_height = 8.5
 
 
 def get_outer_boundary(grid, thickness=3):
@@ -25,7 +23,7 @@ def get_outer_boundary(grid, thickness=3):
         x, y, dx, dy = boundary.corner_to_center_idx(i, j)
 
         def _transform(o, x=x, y=y, dx=dx, dy=dy):
-            shift = x_width / 2 + thickness
+            shift = socket.x_width / 2 + thickness
             o = o.forward(shift * dy).right(shift * dx)
             return grid[x, y](o)
 
@@ -40,12 +38,12 @@ def create_switch_wall(
 ):
     boundary = get_outer_boundary(grid, thickness)
 
-    post = cylinder(z_height, r=thickness).down(z_height / 2)
+    post = cylinder(socket.z_height, r=thickness).down(socket.z_height / 2)
     outside_posts = [trf(post) for trf in boundary]
     outside_posts.append(outside_posts[0])
     switch_wall = chain_hull()(*outside_posts).color("Orange")
 
-    plate = cylinder(eps, r=thickness).down(z_height / 2)
+    plate = cylinder(eps, r=thickness).down(socket.z_height / 2)
     bound_2d = [trf(plate) for trf in boundary]
     bound_2d.append(bound_2d[0])
     lower_wall_pieces = []
@@ -82,7 +80,7 @@ def _generate_example_data():
 
 def example():
     grid = _generate_example_data()
-    switches = horizontal_walls.make_switches(grid, False)
+    switches = socket.socket_grid(grid, False)
     fill = horizontal_walls.fill_between_switches(grid)
 
     wall = create_switch_wall(grid, 1)

@@ -1,24 +1,12 @@
 from solid2 import *  # noqa: F403
-# from solid2.extensions.bosl2 import *  # noqa: F403
-
-# import solid2.extensions.bosl2 as bosl  # noqa: F403
-import solid2 as sp
-from solid2.extensions.bosl2 import TOP, bounding_box, minkowski_difference, xcyl
-
-from mommy import render, render_all
-from scad_helpers import attachable_cube
-
 import numpy as np
-from numpy import array as ar
 
-import vertical_walls
+from mommy import render_all
+import socket
 
 
 eps = 0.01
 inf = 70
-
-x_width = 17
-z_height = 8.5
 
 
 def fill_center(transforms, x, y, h):
@@ -40,7 +28,7 @@ def _get_posts(transforms, x, y, h):
     post = cylinder(h, r=eps)
 
     for trf, (dx, dy) in zip(transforms, ((1, 1), (-1, 1), (-1, -1), (1, -1))):
-        at_edge = post.forward(dx * x / 2).right(dy * y / 2).down(z_height / 2)
+        at_edge = post.forward(dx * x / 2).right(dy * y / 2).down(socket.z_height / 2)
         yield trf(at_edge)
 
 
@@ -53,14 +41,18 @@ def _get_edge_posts(transforms, x, y, h, dir="x"):
             for dx, trf in zip((-1, 1), transforms[::-1]):
                 for dy in (-1, 1):
                     at_edge = (
-                        post.forward(dx * x / 2).right(dy * y / 2).down(z_height / 2)
+                        post.forward(dx * x / 2)
+                        .right(dy * y / 2)
+                        .down(socket.z_height / 2)
                     )
                     yield trf(at_edge)
         case "x":
             for dy, trf in zip((-1, 1), transforms[::-1]):
                 for dx in (-1, 1):
                     at_edge = (
-                        post.forward(dx * x / 2).right(dy * y / 2).down(z_height / 2)
+                        post.forward(dx * x / 2)
+                        .right(dy * y / 2)
+                        .down(socket.z_height / 2)
                     )
                     yield trf(at_edge)
         case _:
@@ -74,8 +66,8 @@ for x in range(demo_transforms.shape[0]):
         def _transform(o, x=x, y=y):
             return (
                 # .rotateX(y / 4 * 90)
-                # o.right((x_width + 2) * x)
-                # .forward((x_width + 2) * y)
+                # o.right((socket.x_width + 2) * x)
+                # .forward((socket.x_width + 2) * y)
                 o.down(50)
                 .rotateX(23 * y - 20)
                 .up(50)
@@ -95,12 +87,20 @@ def _key_fill(grid, x, y):
                 case "right":
                     next_key = grid[x + 1, y]
                     yield fill_edge(
-                        (this_key, next_key), x_width, x_width, z_height, "x"
+                        (this_key, next_key),
+                        socket.x_width,
+                        socket.x_width,
+                        socket.z_height,
+                        "x",
                     )
                 case "down":
                     next_key = grid[x, y + 1]
                     yield fill_edge(
-                        (this_key, next_key), x_width, x_width, z_height, "y"
+                        (this_key, next_key),
+                        socket.x_width,
+                        socket.x_width,
+                        socket.z_height,
+                        "y",
                     )
                 case "across":
                     keys = (
@@ -109,7 +109,9 @@ def _key_fill(grid, x, y):
                         grid[x + 1, y + 1],
                         grid[x + 1, y],
                     )
-                    yield fill_center(keys, x_width, x_width, z_height)
+                    yield fill_center(
+                        keys, socket.x_width, socket.x_width, socket.z_height
+                    )
         except IndexError:
             pass
 
@@ -124,18 +126,17 @@ def fill_between_switches(grid):
 
 def make_switches(grid, use_dummy=True):
     if use_dummy:
-        shape = cube(x_width, x_width, z_height, center=True)
+        shape = cube(socket.x_width, socket.x_width, socket.z_height, center=True)
     else:
-        shape = import_stl("./switch-mount.stl").down(z_height / 2)
+        shape = import_stl("./switch-mount.stl").down(socket.z_height / 2)
     switches = [tr(shape) for tr in grid.flatten()]
     return np.sum(switches).color("Gray")
 
 
 def example():
-    switches = make_switches(demo_transforms, False)
+    switches = socket.socket_grid(demo_transforms, False)
     switch_fill = fill_between_switches(demo_transforms)
-    walls = vertical_walls.simple_walls_cutoff(make_switches(demo_transforms), 30, 2)
-    return switches + switch_fill + walls
+    return switches + switch_fill
 
 
 if __name__ == "__main__":

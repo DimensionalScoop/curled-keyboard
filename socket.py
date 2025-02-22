@@ -1,6 +1,6 @@
 from solid2 import *
-from solid2.extensions.bosl2 import rect_tube
-from mommy import render, render_all
+import numpy as np
+from mommy import render_all
 
 
 eps = 0.01
@@ -48,7 +48,12 @@ def socket(h_holder=2):
     holder += holder.mirrorX()
     holder = holder.up((z_height) / 2)
 
-    return (s + holder).down(z_height / 2)
+    return s + holder
+
+
+def dummy():
+    s = cube([x_width, x_width, z_height], center=True)
+    return s
 
 
 def supporter():
@@ -68,10 +73,19 @@ def supporter():
     return s + box
 
 
+def socket_grid(grid, use_dummy=True):
+    if use_dummy:
+        shape = dummy()
+    else:
+        shape = socket()
+    switches = [tr(shape) for tr in grid.flatten()]
+    return np.sum(switches).color("Gray")
+
+
 def example():
     # import_stl("./switch-mount.stl")
     # shape = import_stl("./switch-mount.stl").down(z_height / 2)
-    return socket() + supporter()
+    return socket() + supporter() + dummy().debug()
 
 
 if __name__ == "__main__":
