@@ -32,19 +32,25 @@ def get_outer_boundary(grid, thickness=3):
     return bound
 
 
-def create_switch_wall(
-    grid,
-    thickness=3,
-    height=10,
-    offset=0,
-):
+def _socket_facing_wall(grid, thickness, offset):
     boundary = get_outer_boundary(grid, thickness / 2 + offset)
 
     post = cylinder(socket.z_height, r=thickness / 2, _fn=15).down(socket.z_height / 2)
     outside_posts = [trf(post) for trf in boundary]
     outside_posts.append(outside_posts[0])
-    switch_wall = chain_hull()(*outside_posts).color("Orange")
+    return chain_hull()(*outside_posts).color("Orange")
 
+
+def create_switch_wall(
+    grid,
+    thickness=3,
+    height=10,
+    offset=0,
+    create_ledge=False,
+):
+    socket_wall = _socket_facing_wall(grid, thickness, offset)
+
+    boundary = get_outer_boundary(grid, thickness / 2 + offset)
     plate = cylinder(eps, r=thickness / 2, _fn=15).down(socket.z_height / 2)
     bound_2d = [trf(plate) for trf in boundary]
     bound_2d.append(bound_2d[0])
@@ -55,7 +61,23 @@ def create_switch_wall(
         connector = hull()(piece_2d, wall)
         lower_wall_pieces.append(wall + connector)
 
-    return union()(lower_wall_pieces).color("DarkOrange") + switch_wall
+    if create_ledge:
+        ledge = _create_ledge(grid, thickness, height, offset)
+    else:
+        ledge = union()()
+
+    return union()(lower_wall_pieces).color("DarkOrange") + socket_wall + ledge
+
+
+def _create_ledge(grid, thickness, height, offset):
+    edge = cube(2, 2, 2, center=True).down(socket.z_height / 2 + 1.35)
+    inner_boundary = get_outer_boundary(grid, offset)
+    ledge = [trf(edge) for trf in inner_boundary]
+    ledge += [ledge[0]]
+    ledge = chain_hull()(ledge).color("LimeGreen")
+    # the ledge is sometimes outside the wall
+    ledge -= create_switch_wall(grid, 10, inf, offset, False)
+    return ledge
 
 
 def _generate_example_data():

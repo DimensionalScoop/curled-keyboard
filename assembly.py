@@ -45,6 +45,7 @@ props = SimpleNamespace(
     ],
     row_spacing=socket.x_width + 4,
     col_spacing=np.array([0, 0, 2, 5, 7, 0]) + socket.x_width,
+    h_offset=10,
 )
 
 target_radius = 5
@@ -53,13 +54,15 @@ actual_radius = U / 2 / np.pi
 print(actual_radius)
 
 
-grid = np.empty((6, 4), dtype=object)
+grid = np.empty((6, 5), dtype=object)
 for x in range(grid.shape[0]):
     height_of_ymost_edge = 0
     width_of_ymost_edge = 0
     for y in range(grid.shape[1]):
         # row tilting
         row_tilt = y * props.curvature_row + props.facing_angle
+        if y == 4:
+            row_tilt = 0
         row_h = height_of_ymost_edge
         height_of_ymost_edge += np.sin(np.deg2rad(row_tilt)) * props.row_spacing
         row_f = width_of_ymost_edge
@@ -78,6 +81,7 @@ for x in range(grid.shape[0]):
                 .translate(props.staggers[x].array())
                 .translate(row_trans_p)
                 .right(np.sum(props.col_spacing[: x + 1]))
+                .up(props.h_offset)
                 # .rotateX(10 * y)
             )
 
@@ -133,14 +137,24 @@ def keycap():
 
 @render
 def example():
+    show_keycaps = False
+
     switches = socket.socket_grid(grid, False)
     fill = horizontal_walls.fill_between_switches(grid)
-
-    # wall = chain_wall.create_switch_wall(grid, 1)
+    offset = 0.35
+    wall = chain_wall.create_switch_wall(
+        grid, 1.84, 8, offset=offset, create_ledge=True
+    )
+    wall -= (switches + fill).down(0.3)
+    wall_cutout = chain_wall.create_switch_wall(grid, 1.84 + offset * 2, 8, offset=0)
 
     keycaps = [trf(keycap()) for trf in grid.flatten()]
 
-    return switches + fill + keycaps  # - cube(1000, 1000, 1000).back(500).down(100)
+    output = switches + fill - wall_cutout + wall
+    output = wall
+    if show_keycaps:
+        output + keycaps
+    return output
 
 
 if __name__ == "__main__":
