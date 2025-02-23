@@ -48,7 +48,7 @@ def socket(h_holder=2):
     holder += holder.mirrorX()
     holder = holder.up((z_height) / 2)
 
-    return s + holder
+    return (s + holder).rotateZ(-90)
 
 
 def dummy():

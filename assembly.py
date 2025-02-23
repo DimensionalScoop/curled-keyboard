@@ -29,24 +29,40 @@ class Stagger:
         return [self.x, self.y, self.z]
 
 
+row_radii = np.array([42.7, 42.7, 46.8, 42.4, 39.1, 39.1]) * 0.85 + 10
+
+
+row_spacing = socket.x_width + 4
+
+
+def r2curv(r):
+    return row_spacing * 4 / (r * 3 / 360 * 2 * np.pi)
+
+
 props = SimpleNamespace(
-    facing_angle=-22,
-    curvature_row=104 / 3,
+    facing_angle=-35,
+    # curvature_row=104 / 3,
+    curvature_row=r2curv(row_radii),
     curvature_col=0,
     # fan=[0, 0, 30, 7, 27, 0],
-    fan=np.array([0, 0, 3, 0.7, 2.7, 0]) * 1,
+    # fan=np.array([0, 0, 3, 0.7, 2.7, 0]) * 1,
     staggers=[
         Stagger(0, 0, 0),  # index
         Stagger(0, 0, 0),  # index
+        # Stagger(0, 0, 0),  # index
+        # Stagger(0, 0, 0),  # index
+        # Stagger(0, 0, 0),  # index
+        # Stagger(0, 0, 0),  # index
         Stagger(0, 7.3, 1.15),  # middle
         Stagger(0, 0.75, -0.3),  # ring
         Stagger(0, -14, 1.63),  # pinky
         Stagger(0, -14, 1.63),  # pinky
     ],
-    row_spacing=socket.x_width + 4,
-    col_spacing=np.array([0, 0, 2, 5, 7, 0]) + socket.x_width,
+    row_spacing=row_spacing,
+    col_spacing=np.array([0, 0.3, 1, 3, 7 - 3.5, 0]) + socket.x_width,
     h_offset=10,
 )
+
 
 target_radius = 5
 U = props.row_spacing * 4 / (props.curvature_row * 3 / 360)
@@ -60,7 +76,7 @@ for x in range(grid.shape[0]):
     width_of_ymost_edge = 0
     for y in range(grid.shape[1]):
         # row tilting
-        row_tilt = y * props.curvature_row + props.facing_angle
+        row_tilt = y * props.curvature_row[x] + props.facing_angle
         if y == 4:
             row_tilt = 0
         row_h = height_of_ymost_edge
@@ -137,7 +153,7 @@ def keycap():
 
 @render
 def example():
-    show_keycaps = False
+    show_keycaps = True
 
     switches = socket.socket_grid(grid, False)
     fill = horizontal_walls.fill_between_switches(grid)
@@ -150,8 +166,8 @@ def example():
 
     keycaps = [trf(keycap()) for trf in grid.flatten()]
 
-    output = switches + fill - wall_cutout + wall
-    output = wall
+    output = switches + fill - wall_cutout  # + wall
+    # output = wall
     if show_keycaps:
         output + keycaps
     return output
