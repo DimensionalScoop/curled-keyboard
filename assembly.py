@@ -59,7 +59,7 @@ props = SimpleNamespace(
         Stagger(0, -14, 1.63),  # pinky
     ],
     row_spacing=row_spacing,
-    col_spacing=np.array([0, 0.3, 1, 3, 7 - 3.5, 0]) + socket.x_width,
+    col_spacing=np.array([0, 0.3, 1, 3, 7 - 3.5, 0.3]) + socket.x_width,
     h_offset=10,
 )
 
@@ -166,8 +166,11 @@ def example():
 
     keycaps = [trf(keycap()) for trf in grid.flatten()]
 
-    output = switches + fill - wall_cutout  # + wall
+    # output = switches + fill - wall_cutout  # + wall
     # output = wall
+
+    thick_outline = chain_wall._socket_facing_wall(grid, 1.5, 0)
+    output = switches + fill + thick_outline
     if show_keycaps:
         output + keycaps
     return output
